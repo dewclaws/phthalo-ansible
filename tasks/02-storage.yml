@@ -1,0 +1,39 @@
+---
+- name: Add Debian stable-backports apt repository
+  ansible.builtin.apt_repository:
+    repo: deb http://mirror.csclub.uwaterloo.ca/debian/ {{ ansible_distribution_release }}-backports main non-free-firmware contrib
+    update_cache: true
+
+- name: Install zfs dependencies
+  ansible.builtin.apt:
+    name: linux-headers-amd64
+
+- name: Install zfs
+  ansible.builtin.apt:
+    name: zfsutils-linux
+    default_release: stable-backports
+
+- name: Check for existing zfs pool
+  ansible.builtin.command: zpool list -Ho name {{ zfs_pool_name }}
+  register: pool_list_result
+  ignore_errors: true
+  changed_when: false
+
+- name: Create zfs pool
+  ansible.builtin.command: >-
+    zpool create
+    {{ '-m ' + zfs_pool_mount if zfs_pool_mount else '' }}
+    {{ zfs_pool_name }}
+    {{ zfs_pool_mode if zfs_pool_mode else '' }}
+    {{ zfs_pool_devices | join(' ') }}
+  when:
+    - pool_list_result.rc == 1
+  changed_when: pool_list_result.rc == 1
+
+- name: Ensure pool is mounted
+  ansible.builtin.file:
+    path: "{{ zfs_pool_mount }}"
+    state: directory
+    owner: "{{ media_user }}"
+    group: "{{ media_user }}"
+    mode: "0750"

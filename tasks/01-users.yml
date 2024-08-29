@@ -1,0 +1,23 @@
+---
+- name: Create media user
+  ansible.builtin.user:
+    name: "{{ media_user }}"
+    group: "{{ media_user }}"
+    password: "*"
+    home: /home/{{ media_user }}
+
+- name: Add self to media group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: "{{ media_user }}"
+    append: true
+
+- name: Suppress login message
+  ansible.builtin.file:
+    name: /home/{{ ansible_user }}/.hushlogin
+    state: touch
+    mode: "0644"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    modification_time: preserve
+    access_time: preserve

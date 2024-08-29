@@ -1,0 +1,19 @@
+---
+- name: Prepare machines
+  hosts: all
+  become: true
+  pre_tasks:
+    - name: Apt update
+      tags: always
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+      when: ansible_distribution == "Debian"
+  roles:
+    - base
+
+- name: Configure media servers
+  hosts: media
+  roles:
+    - media
+    - docker

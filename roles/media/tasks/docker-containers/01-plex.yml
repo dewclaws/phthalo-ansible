@@ -1,0 +1,41 @@
+---
+- name: Create Plex user
+  ansible.builtin.user:
+    name: plex
+    group: media
+    password: "*"
+  register: plex_user
+
+- name: Create Plex dirs
+  ansible.builtin.file:
+    path: "{{ dir }}"
+    state: directory
+    owner: plex
+    group: media
+    mode: "0770"
+  loop:
+    - "{{ plex_user.home }}/container_config"
+    - "{{ media_zfs_pool_mount }}/tv"
+    - "{{ media_zfs_pool_mount }}/movies"
+  loop_control:
+    loop_var: dir
+
+- name: Create Plex container
+  community.docker.docker_container:
+    name: plexmediaserver
+    image: lscr.io/linuxserver/plex:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    network_mode: host
+    env:
+      PUID: "{{ plex_user.uid }}"
+      PGID: "{{ plex_user.group }}"
+      TZ: "{{ timezone }}"
+      VERSION: latest
+    volumes:
+      - "{{ plex_user.home }}/container_config:/config"
+      - "{{ media_zfs_pool_mount }}/tv:/tv"
+      - "{{ media_zfs_pool_mount }}/movies:/movies"
+    devices:
+      - /dev/dri:/dev/dri

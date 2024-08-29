@@ -1,0 +1,29 @@
+---
+- name: Create media user
+  ansible.builtin.user:
+    name: media
+    group: media
+    password: "*"
+
+- name: Add self to media group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: media
+    append: true
+
+- name: Ensure ZFS disks are defined
+  ansible.builtin.fail:
+    msg: >-
+      ZFS cannot be provisioned on host
+      {{ inventory_hostname }}
+      without a list of disks defined
+  when: media_zfs_pool_devices is undefined
+
+- name: Gather ZFS variables
+  ansible.builtin.include_vars: vars/zfs.yml
+
+- name: Provision ZFS volumes
+  ansible.builtin.import_tasks: zfs.yml
+
+- name: Set up Docker
+  ansible.builtin.import_tasks: docker.yml

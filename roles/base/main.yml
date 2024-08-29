@@ -1,0 +1,18 @@
+---
+- name: Gather package facts
+  ansible.builtin.package_facts:
+
+- name: Add ssh key
+  ansible.builtin.authorized_key:
+    user: "{{ ansible_user }}"
+    key: "{{ ssh_pk }}"
+
+- name: Suppress login message
+  ansible.builtin.file:
+    name: /home/{{ ansible_user }}/.hushlogin
+    state: touch
+    mode: "0644"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    modification_time: preserve
+    access_time: preserve

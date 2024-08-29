@@ -1,0 +1,42 @@
+---
+- name: Install docker dependencies
+  ansible.builtin.apt:
+    pkg:
+      - ca-certificates
+      - gnupg
+      - curl
+
+- name: Set facts for Docker installation
+  ansible.builtin.set_fact:
+    keyring_path: /etc/apt/keyrings
+
+- name: Create apt keyrings directory
+  ansible.builtin.file:
+    path: "{{ keyring_path }}"
+    state: directory
+    mode: '0644'
+
+- name: Download Docker GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+    dest: "{{ keyring_path }}/docker.asc"
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Add Docker apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch=amd64 signed-by={{ keyring_path }}/docker.asc]
+      https://download.docker.com/linux/{{ ansible_distribution | lower }}
+      {{ ansible_distribution_release }} stable
+    update_cache: true
+
+- name: Install Docker
+  ansible.builtin.apt:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin

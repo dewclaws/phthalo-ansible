@@ -1,0 +1,9 @@
+---
+- name: Install Docker
+  ansible.builtin.import_tasks: install.yml
+  when:
+    - "'docker-ce' not in ansible_facts.packages"
+    - "'docker-ce-cli' not in ansible_facts.packages"
+    - "'containerd.io' not in ansible_facts.packages"
+    - "'docker-buildx-plugin' not in ansible_facts.packages"
+    - "'docker-compose-plugin' not in ansible_facts.packages"

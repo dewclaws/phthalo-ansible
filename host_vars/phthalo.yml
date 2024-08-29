@@ -1,0 +1,8 @@
+---
+timezone: America/Toronto
+
+# roles/media/tasks/zfs.yml
+media_zfs_pool_mode: mirror
+media_zfs_pool_devices:
+  - "ata-WDC_WD60EFPX-68C5ZN0_WD-WX92D63ADJTE"
+  - "ata-ST6000VN0033-2EE110_ZADBCEVV"

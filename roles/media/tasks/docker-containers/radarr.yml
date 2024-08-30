@@ -1,0 +1,41 @@
+---
+- name: Create Radarr user
+  ansible.builtin.user:
+    name: radarr
+    group: media
+    password: "*"
+  register: radarr_user
+
+- name: Create Radarr dir
+  ansible.builtin.file:
+    path: "{{ radarr_user.home }}/container_config"
+    state: directory
+    owner: "{{ radarr_user.name }}"
+    group: media
+    mode: "0750"
+
+# - name: Copy Radarr config file
+#   ansible.builtin.copy:
+#     src: sabnzbd.ini
+#     dest: "{{ qbt_user.home }}/container_config/sabnzbd.ini"
+#     owner: "{{ sab_user.uid }}"
+#     group: "{{ sab_user.group }}"
+#     mode: "0750"
+
+- name: Create Radarr container
+  community.docker.docker_container:
+    name: radarr
+    image: lscr.io/linuxserver/radarr:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    env:
+      PUID: "{{ radarr_user.uid }}"
+      PGID: "{{ radarr_user.group }}"
+      TZ: "{{ timezone }}"
+    ports:
+      - 7878:7878
+    volumes:
+      - "{{ radarr_user.home }}/container_config:/config"
+      - "{{ media_zfs_pool_mount }}/downloads:/downloads"
+      - "{{ media_zfs_pool_mount }}/movies:/movies"

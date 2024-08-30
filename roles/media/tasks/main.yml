@@ -1,4 +1,8 @@
 ---
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
 - name: Create media user
   ansible.builtin.user:
     name: media

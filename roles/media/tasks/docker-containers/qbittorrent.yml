@@ -1,0 +1,51 @@
+---
+- name: Create qBittorrent user
+  ansible.builtin.user:
+    name: qbittorrent
+    group: media
+    password: "*"
+  register: qbt_user
+
+- name: Create qBittorrent dirs
+  ansible.builtin.file:
+    path: "{{ dir.name }}"
+    state: directory
+    owner: "{{ qbt_user.name }}"
+    group: media
+    mode: "{{ dir.mode }}"
+  loop:
+    - name: "{{ qbt_user.home }}/container_config"
+      mode: "0750"
+    - name: "{{ media_zfs_pool_mount }}/downloads/qbittorrent"
+      mode: "0770"
+  loop_control:
+    loop_var: dir
+
+- name: Copy qBittorrent config file
+  ansible.builtin.copy:
+    src: qbittorrent.conf
+    dest: "{{ qbt_user.home }}/container_config/qBittorrent/qBittorrent.conf"
+    owner: "{{ qbt_user.uid }}"
+    group: "{{ qbt_user.group }}"
+    mode: "0750"
+
+- name: Create qBittorrent container
+  community.docker.docker_container:
+    name: qbittorrent
+    image: lscr.io/linuxserver/qbittorrent:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    env:
+      PUID: "{{ qbt_user.uid }}"
+      PGID: "{{ qbt_user.group }}"
+      TZ: "{{ timezone }}"
+      WEBUI_PORT: "8080"
+      TORRENTING_PORT: "6881"
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+    volumes:
+      - "{{ qbt_user.home }}/container_config:/config"
+      - "{{ media_zfs_pool_mount }}/downloads:/downloads"

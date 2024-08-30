@@ -1,7 +1,4 @@
 ---
-- name: Gather package facts
-  ansible.builtin.package_facts:
-
 - name: Add ssh key
   ansible.builtin.authorized_key:
     user: "{{ ansible_user }}"

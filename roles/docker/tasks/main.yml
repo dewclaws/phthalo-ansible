@@ -1,4 +1,8 @@
 ---
+- name: Gather package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
 - name: Install Docker
   ansible.builtin.import_tasks: install.yml
   when:

@@ -1,8 +1,8 @@
 play:
-  @ansible-playbook -K main.yml
+  @ansible-playbook --vault-password-file password -K site.yml
 
 encrypt path:
-  @ansible-vault encrypt --vault-password-file enc_pass {{path}}
+  @ansible-vault encrypt --vault-password-file password {{path}}
 
 decrypt path:
-  @ansible-vault decrypt --vault-password-file enc_pass {{path}}
+  @ansible-vault decrypt --vault-password-file password {{path}}

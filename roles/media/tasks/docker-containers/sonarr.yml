@@ -1,0 +1,41 @@
+---
+- name: Create Sonarr user
+  ansible.builtin.user:
+    name: sonarr
+    group: media
+    password: "*"
+  register: sonarr_user
+
+- name: Create Sonarr dir
+  ansible.builtin.file:
+    path: "{{ sonarr_user.home }}/container_config"
+    state: directory
+    owner: "{{ sonarr_user.name }}"
+    group: media
+    mode: "0750"
+
+# - name: Copy Sonarr config file
+#   ansible.builtin.copy:
+#     src: sabnzbd.ini
+#     dest: "{{ qbt_user.home }}/container_config/sabnzbd.ini"
+#     owner: "{{ sab_user.uid }}"
+#     group: "{{ sab_user.group }}"
+#     mode: "0750"
+
+- name: Create Sonarr container
+  community.docker.docker_container:
+    name: sonarr
+    image: lscr.io/linuxserver/sonarr:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    env:
+      PUID: "{{ sonarr_user.uid }}"
+      PGID: "{{ sonarr_user.group }}"
+      TZ: "{{ timezone }}"
+    ports:
+      - 8989:8989
+    volumes:
+      - "{{ sonarr_user.home }}/container_config:/config"
+      - "{{ media_zfs_pool_mount }}/downloads:/downloads"
+      - "{{ media_zfs_pool_mount }}/tv:/tv"

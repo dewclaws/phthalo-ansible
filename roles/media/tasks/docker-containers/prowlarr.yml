@@ -8,6 +8,14 @@
     mode: "0750"
   register: prowlarr_config_dir
 
+- name: Copy Prowlarr config files
+  ansible.builtin.copy:
+    src: prowlarr/
+    dest: "{{ prowlarr_config_dir.path }}/"
+    owner: "{{ media_user.uid }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
+
 - name: Create Prowlarr container
   community.docker.docker_container:
     name: prowlarr

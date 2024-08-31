@@ -8,6 +8,14 @@
     mode: "0750"
   register: sonarr_config_dir
 
+- name: Copy Sonarr config files
+  ansible.builtin.copy:
+    src: sonarr/
+    dest: "{{ sonarr_config_dir.path }}/"
+    owner: "{{ media_user.uid }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
+
 - name: Create Sonarr container
   community.docker.docker_container:
     name: sonarr

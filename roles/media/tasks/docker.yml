@@ -26,6 +26,12 @@
     group: media
     mode: "0770"
 
+- name: Create private Docker network
+  community.docker.docker_network:
+    name: phthalo-media
+    state: present
+    driver: bridge
+
 - name: Create Docker containers
   ansible.builtin.include_tasks: "{{ item }}"
   loop: "{{ lookup('fileglob', 'docker-containers/*.yml', wantlist=True) }}"

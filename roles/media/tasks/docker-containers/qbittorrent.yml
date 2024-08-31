@@ -1,32 +1,27 @@
 ---
-- name: Create qBittorrent user
-  ansible.builtin.user:
-    name: qbittorrent
-    group: media
-    password: "*"
-  register: qbt_user
-
-- name: Create qBittorrent dirs
+- name: Create qBittorrent config dir
   ansible.builtin.file:
-    path: "{{ dir.name }}"
+    path: "{{ media_user.home }}/.config/qbittorrent"
     state: directory
-    owner: "{{ qbt_user.name }}"
-    group: media
-    mode: "{{ dir.mode }}"
-  loop:
-    - name: "{{ qbt_user.home }}/container_config"
-      mode: "0750"
-    - name: "{{ media_zfs_pool_mount }}/downloads/qbittorrent"
-      mode: "0770"
-  loop_control:
-    loop_var: dir
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
+  register: qbt_config_dir
+
+- name: Create qBittorrent downloads dir
+  ansible.builtin.file:
+    path: "{{ media_zfs_pool_mount }}/downloads/qbittorrent"
+    state: directory
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
+    mode: "0770"
 
 - name: Copy qBittorrent config file
   ansible.builtin.copy:
     src: qbittorrent.conf
-    dest: "{{ qbt_user.home }}/container_config/qBittorrent/qBittorrent.conf"
-    owner: "{{ qbt_user.uid }}"
-    group: "{{ qbt_user.group }}"
+    dest: "{{ qbt_config_dir.path }}/qBittorrent/qBittorrent.conf"
+    owner: "{{ media_user.uid }}"
+    group: "{{ media_user.group }}"
     mode: "0750"
 
 - name: Create qBittorrent container
@@ -36,9 +31,11 @@
     pull: always
     state: started
     restart_policy: unless-stopped
+    networks:
+      - name: phthalo-media
     env:
-      PUID: "{{ qbt_user.uid }}"
-      PGID: "{{ qbt_user.group }}"
+      PUID: "{{ media_user.uid }}"
+      PGID: "{{ media_user.group }}"
       TZ: "{{ timezone }}"
       WEBUI_PORT: "8080"
       TORRENTING_PORT: "6881"
@@ -47,5 +44,5 @@
       - 6881:6881
       - 6881:6881/udp
     volumes:
-      - "{{ qbt_user.home }}/container_config:/config"
-      - "{{ media_zfs_pool_mount }}/downloads:/downloads"
+      - "{{ qbt_config_dir.path }}:/config"
+      - "{{ media_zfs_pool_mount }}:/data"

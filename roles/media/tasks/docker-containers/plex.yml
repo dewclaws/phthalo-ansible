@@ -1,20 +1,21 @@
 ---
-- name: Create Plex user
-  ansible.builtin.user:
-    name: plex
-    group: media
-    password: "*"
-  register: plex_user
+- name: Create Plex config dir
+  ansible.builtin.file:
+    path: "{{ media_user.home }}/.config/plexmediaserver"
+    state: directory
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
+  register: plex_config_dir
 
-- name: Create Plex dirs
+- name: Create Plex media dirs
   ansible.builtin.file:
     path: "{{ dir }}"
     state: directory
-    owner: plex
-    group: media
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
     mode: "0770"
   loop:
-    - "{{ plex_user.home }}/container_config"
     - "{{ media_zfs_pool_mount }}/tv"
     - "{{ media_zfs_pool_mount }}/movies"
   loop_control:
@@ -29,12 +30,12 @@
     restart_policy: unless-stopped
     network_mode: host
     env:
-      PUID: "{{ plex_user.uid }}"
-      PGID: "{{ plex_user.group }}"
+      PUID: "{{ media_user.uid }}"
+      PGID: "{{ media_user.group }}"
       TZ: "{{ timezone }}"
       VERSION: latest
     volumes:
-      - "{{ plex_user.home }}/container_config:/config"
+      - "{{ plex_config_dir.path }}:/config"
       - "{{ media_zfs_pool_mount }}/tv:/tv"
       - "{{ media_zfs_pool_mount }}/movies:/movies"
     devices:

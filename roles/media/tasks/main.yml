@@ -8,6 +8,7 @@
     name: media
     group: media
     password: "*"
+  register: media_user
 
 - name: Add self to media group
   ansible.builtin.user:

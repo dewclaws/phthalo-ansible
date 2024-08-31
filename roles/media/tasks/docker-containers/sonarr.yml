@@ -1,26 +1,12 @@
 ---
-- name: Create Sonarr user
-  ansible.builtin.user:
-    name: sonarr
-    group: media
-    password: "*"
-  register: sonarr_user
-
 - name: Create Sonarr dir
   ansible.builtin.file:
-    path: "{{ sonarr_user.home }}/container_config"
+    path: "{{ media_user.home }}/.config/sonarr"
     state: directory
-    owner: "{{ sonarr_user.name }}"
-    group: media
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
     mode: "0750"
-
-# - name: Copy Sonarr config file
-#   ansible.builtin.copy:
-#     src: sabnzbd.ini
-#     dest: "{{ qbt_user.home }}/container_config/sabnzbd.ini"
-#     owner: "{{ sab_user.uid }}"
-#     group: "{{ sab_user.group }}"
-#     mode: "0750"
+  register: sonarr_config_dir
 
 - name: Create Sonarr container
   community.docker.docker_container:
@@ -29,13 +15,14 @@
     pull: always
     state: started
     restart_policy: unless-stopped
+    networks:
+      - name: phthalo-media
     env:
-      PUID: "{{ sonarr_user.uid }}"
-      PGID: "{{ sonarr_user.group }}"
+      PUID: "{{ media_user.uid }}"
+      PGID: "{{ media_user.group }}"
       TZ: "{{ timezone }}"
     ports:
       - 8989:8989
     volumes:
-      - "{{ sonarr_user.home }}/container_config:/config"
-      - "{{ media_zfs_pool_mount }}/downloads:/downloads"
-      - "{{ media_zfs_pool_mount }}/tv:/tv"
+      - "{{ sonarr_config_dir.path }}:/config"
+      - "{{ media_zfs_pool_mount }}:/data"

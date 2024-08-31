@@ -1,26 +1,20 @@
 ---
-- name: Create Radarr user
-  ansible.builtin.user:
-    name: radarr
-    group: media
-    password: "*"
-  register: radarr_user
-
 - name: Create Radarr dir
   ansible.builtin.file:
-    path: "{{ radarr_user.home }}/container_config"
+    path: "{{ media_user.home }}/.config/radarr"
     state: directory
-    owner: "{{ radarr_user.name }}"
-    group: media
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
     mode: "0750"
+  register: radarr_config_dir
 
-# - name: Copy Radarr config file
-#   ansible.builtin.copy:
-#     src: sabnzbd.ini
-#     dest: "{{ qbt_user.home }}/container_config/sabnzbd.ini"
-#     owner: "{{ sab_user.uid }}"
-#     group: "{{ sab_user.group }}"
-#     mode: "0750"
+- name: Copy Radarr config files
+  ansible.builtin.copy:
+    src: radarr/
+    dest: "{{ radarr_config_dir.path }}/"
+    owner: "{{ media_user.uid }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
 
 - name: Create Radarr container
   community.docker.docker_container:
@@ -29,13 +23,14 @@
     pull: always
     state: started
     restart_policy: unless-stopped
+    networks:
+      - name: phthalo-media
     env:
-      PUID: "{{ radarr_user.uid }}"
-      PGID: "{{ radarr_user.group }}"
+      PUID: "{{ media_user.uid }}"
+      PGID: "{{ media_user.group }}"
       TZ: "{{ timezone }}"
     ports:
       - 7878:7878
     volumes:
-      - "{{ radarr_user.home }}/container_config:/config"
-      - "{{ media_zfs_pool_mount }}/downloads:/downloads"
-      - "{{ media_zfs_pool_mount }}/movies:/movies"
+      - "{{ radarr_config_dir.path }}:/config"
+      - "{{ media_zfs_pool_mount }}:/data"

@@ -9,6 +9,7 @@ Currently it runs on a single host, as that's all I need it to do.
   * This playbook was written to support **Debian 12**
   * It is meant to be run on a freshly-installed machine with:
     * `sudo` installed, and available to your remote user(s)
+  * **You should have a `password` file** with an encryption password for the default container configs
 
 ## Variables
 

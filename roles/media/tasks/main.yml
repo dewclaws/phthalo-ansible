@@ -32,3 +32,5 @@
 
 - name: Set up Docker
   ansible.builtin.import_tasks: docker.yml
+  tags:
+    - docker

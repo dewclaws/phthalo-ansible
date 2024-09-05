@@ -23,6 +23,8 @@
     owner: "{{ media_user.uid }}"
     group: "{{ media_user.group }}"
     mode: "0750"
+  tags:
+    - initial
 
 - name: Create qBittorrent container
   community.docker.docker_container:

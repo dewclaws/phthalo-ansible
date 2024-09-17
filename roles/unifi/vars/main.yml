@@ -1,0 +1,4 @@
+---
+unifi_timezone: America/Toronto
+unifi_config_dir: "{{ ansible_user_dir }}/.config/unifi"
+unifi_db_name: unifi

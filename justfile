@@ -1,11 +1,11 @@
-play:
-  @ansible-playbook --vault-password-file password -K site.yml
+init-hosts:
+  @ansible-playbook site.yml -K --tags "init"
 
-docker-switch:
-  @ansible-playbook --vault-password-file password -K site.yml --tags docker --skip-tags initial
+deploy-unifi:
+  @ansible-playbook site.yml -K --tags "unifi"
 
-encrypt path:
-  @ansible-vault encrypt --vault-password-file password {{path}}
+galaxy-pull:
+  @ansible-galaxy install -r requirements.yml
 
-decrypt path:
-  @ansible-vault decrypt --vault-password-file password {{path}}
+media-deploy:
+  @ansible-playbook site.yml -K --tags "media-deploy"

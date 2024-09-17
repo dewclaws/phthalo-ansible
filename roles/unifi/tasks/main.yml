@@ -1,0 +1,31 @@
+---
+- name: Create unifi config dir
+  ansible.builtin.file:
+    path: "{{ unifi_config_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Setup unifi database
+  ansible.builtin.include_tasks:
+    file: mongo.yml
+
+- name: Deploy unifi container
+  community.docker.docker_container:
+    name: unifi-controller
+    image: lscr.io/linuxserver/unifi-network-application:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    network_mode: host
+    env:
+      PUID: "{{ ansible_user_uid | string }}"
+      PGID: "{{ ansible_user_gid | string }}"
+      TZ: "{{ unifi_timezone }}"
+      MONGO_USER: "{{ unifi_db_name }}"
+      MONGO_PASS: "{{ unifi_db_name }}"
+      MONGO_HOST: "localhost"
+      MONGO_PORT: "27017"
+      MONGO_DBNAME: "{{ unifi_db_name }}"
+      MONGO_AUTHSOURCE: "admin"
+    volumes:
+      - "{{ unifi_config_dir }}/data:/config"

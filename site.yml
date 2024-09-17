@@ -1,20 +1,37 @@
 ---
-- name: Prepare machines
+- name: Prepare hosts
+  tags: init
   hosts: all
   become: true
-  pre_tasks:
+  tasks:
     - name: Apt update
-      tags: always
       ansible.builtin.apt:
         update_cache: true
         upgrade: dist
       when: ansible_distribution == "Debian"
   roles:
-    - base
+    - geerlingguy.security
 
-- name: Configure media servers
-  hosts: media
+- name: Set up Phthalo
+  hosts: phthalo
+  become: true
+  vars:
+    docker_users:
+      - "{{ ansible_user }}"
+  roles:
+    - geerlingguy.docker
+    - mrlesmithjr.zfs
+  tags: init
+
+- name: Deploy Unifi controller
+  hosts: phthalo
+  roles:
+    - unifi
+  tags: unifi
+
+- name: Deploy media services
+  hosts: phthalo
   become: true
   roles:
-    - docker
     - media
+  tags: media-deploy

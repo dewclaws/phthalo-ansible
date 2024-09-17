@@ -1,36 +1,59 @@
 ---
-- name: Gather package facts
-  ansible.builtin.package_facts:
-    manager: auto
+- name: Setup media prerequisites
+  tags: init
+  block:
+    - name: Create media user
+      ansible.builtin.user:
+        name: "{{ media_user_name }}"
+        group: "{{ media_user_name }}"
+        password: "*"
+        create_home: false
+      register: media_user
 
-- name: Create media user
-  ansible.builtin.user:
-    name: media
-    group: media
-    password: "*"
-  register: media_user
+    - name: Add self to media group
+      ansible.builtin.user:
+        name: "{{ ansible_user_id }}"
+        groups: "{{ media_user.group }}"
+        append: true
 
-- name: Add self to media group
-  ansible.builtin.user:
-    name: "{{ ansible_user }}"
-    groups: media
-    append: true
+    - name: Ensure Docker group exists
+      ansible.builtin.group:
+        name: docker
 
-- name: Ensure ZFS disks are defined
-  ansible.builtin.fail:
-    msg: >-
-      ZFS cannot be provisioned on host
-      {{ inventory_hostname }}
-      without a list of disks defined
-  when: media_zfs_pool_devices is undefined
+    - name: Add users to Docker group
+      ansible.builtin.user:
+        name: "{{ item }}"
+        groups: docker
+        append: true
+      loop:
+        - "{{ ansible_user_id }}"
+        - media
 
-- name: Gather ZFS variables
-  ansible.builtin.include_vars: vars/zfs.yml
+    - name: Enable Docker service
+      ansible.builtin.service:
+        name: docker
+        enabled: true
+        state: started
 
-- name: Provision ZFS volumes
-  ansible.builtin.import_tasks: zfs.yml
+    - name: Create private Docker network
+      community.docker.docker_network:
+        name: "{{ media_docker_network }}"
+        state: present
+        driver: bridge
 
-- name: Set up Docker
-  ansible.builtin.import_tasks: docker.yml
-  tags:
-    - docker
+    - name: Establish directory structure
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: media
+        group: media
+        mode: "0770"
+      loop:
+        - "{{ media_download_dir }}"
+        - "{{ media_movie_dir }}"
+        - "{{ media_tv_dir }}"
+
+- name: Deploy Docker containers
+  tags: media-deploy
+  ansible.builtin.include_tasks: "{{ item }}"
+  loop: "{{ lookup('fileglob', 'containers/*.yml', wantlist=True) }}"

@@ -1,0 +1,29 @@
+---
+- name: "Plex : create config dir"
+  ansible.builtin.file:
+    path: "{{ media_appdata_dir }}/plexmediaserver"
+    state: directory
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
+  register: plex_config_dir
+
+- name: "Plex : deploy container"
+  community.docker.docker_container:
+    name: plexmediaserver
+    image: lscr.io/linuxserver/plex:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    network_mode: host
+    env:
+      PUID: "{{ media_user.uid }}"
+      PGID: "{{ media_user.group }}"
+      TZ: "{{ media_timezone }}"
+      VERSION: latest
+    volumes:
+      - "{{ plex_config_dir.path }}:/config"
+      - "{{ media_tv_dir }}:/tv"
+      - "{{ media_movie_dir }}:/movies"
+    devices:
+      - /dev/dri:/dev/dri

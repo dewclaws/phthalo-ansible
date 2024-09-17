@@ -1,0 +1,42 @@
+---
+- name: "Sabnzbd : create config dir"
+  ansible.builtin.file:
+    path: "{{ media_appdata_dir }}/sabnzbd"
+    state: directory
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
+  register: sab_config_dir
+
+- name: "Sabnzbd : create download dir"
+  ansible.builtin.file:
+    path: "{{ dir }}"
+    state: directory
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
+    mode: "0770"
+  loop:
+    - "{{ media_download_dir }}/sabnzbd"
+    - "{{ media_download_dir }}/sabnzbd/incomplete"
+    - "{{ media_download_dir }}/sabnzbd/complete"
+  loop_control:
+    loop_var: dir
+
+- name: "Sabnzbd : deploy container"
+  community.docker.docker_container:
+    name: sabnzbd
+    image: lscr.io/linuxserver/sabnzbd:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ media_docker_network }}"
+    env:
+      PUID: "{{ media_user.uid }}"
+      PGID: "{{ media_user.group }}"
+      TZ: "{{ media_timezone }}"
+    ports:
+      - 8081:8081
+    volumes:
+      - "{{ sab_config_dir.path }}:/config"
+      - "{{ media_root_mount }}:/data"

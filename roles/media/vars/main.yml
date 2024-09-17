@@ -1,0 +1,9 @@
+---
+media_timezone: America/Toronto
+media_user_name: media
+media_docker_network: phthalo-media
+media_root_mount: /mnt/storage
+media_appdata_dir: "{{ media_root_mount }}/.appdata"
+media_download_dir: "{{ media_root_mount }}/downloads"
+media_movie_dir: "{{ media_root_mount }}/movies"
+media_tv_dir: "{{ media_root_mount }}/tv"

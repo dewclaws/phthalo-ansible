@@ -1,0 +1,28 @@
+---
+- name: "Sonarr : create config dir"
+  ansible.builtin.file:
+    path: "{{ media_appdata_dir }}/sonarr"
+    state: directory
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
+  register: sonarr_config_dir
+
+- name: "Sonarr : deploy container"
+  community.docker.docker_container:
+    name: sonarr
+    image: lscr.io/linuxserver/sonarr:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ media_docker_network }}"
+    env:
+      PUID: "{{ media_user.uid }}"
+      PGID: "{{ media_user.group }}"
+      TZ: "{{ media_timezone }}"
+    ports:
+      - 8989:8989
+    volumes:
+      - "{{ sonarr_config_dir.path }}:/config"
+      - "{{ media_root_mount }}:/data"

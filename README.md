@@ -1,35 +1,59 @@
 # Azur's lab playbook
 
-This is an Ansible playbook that sets up my home server with the packages, docker containers, and ZFS provisioning for my needs.
+This is a really simple playbook to harden my server(s) and install necessary packages.
+There's also a role to set up my media server, Phthalo.
 
-Currently it runs on a single host, as that's all I need it to do.
+## Prerequisites
 
-## Assumptions
+  * ⭐️ Initial setup for a freshly-installed Debian machine, via passworded SSH:
+    ```bash
+      # Install and configure sudo from the root user
+      su -
+      apt-get install sudo
+      usermod -aG sudo <you>
+      exit
 
-  * This playbook was written to support **Debian 12**
-  * It is meant to be run on a freshly-installed machine with:
-    * `sudo` installed, and available to your remote user(s)
-  * **You should have a `password` file** with an encryption password for the default container configs
+      # My password manager handles my SSH key,
+      # but I have to copy it to new hosts manually
+      # ...for whatever reason
+      mkdir ~/.ssh
+      vi ~/.ssh/authorized_keys
+      ```
+  * 📼 Phthalo-specific setup:
+    1. **Run `just init-hosts` first**
+    2. If the ZFS pool has been nuked for whatever reason, that's no good. You'll need to create it.
+      ```bash
+      sudo zpool create \
+        # mountpoint
+        -m /mnt/storage \
+        # pool name
+        storage \
+        # pool mode
+        mirror \
+        <disks, space separated>
+      ```
+    3. If the pool just needs to be imported, great!
+      ```bash
+      sudo zpool import storage
+      ```
+    4. Configure ownership of the mount.
+      ```bash
+      sudo chown -R media:media /mnt/storage
+      sudo chmod -R 770 /mnt/storage
+      ```
 
-## Variables
+## Running the playbook
 
-Variables that you may want to change:
-  * `group_vars/all.yml`
-    * `ssh_pk`: the public key you want to be copied to all hosts
-  * `host_vars/*.yml`
-    * `timezone`: the timezone explicitly defined for most Docker containers
-    * `media_zfs_pool_mode`: the [vdev mode](https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Virtual_Devices_(vdevs)) to specify for the media ZFS pool
-    * `media_zfs_pool_devices`: a list of disk IDs to be part of the media ZFS pool
+Ensure [`just`](https://github.com/casey/just) is installed. Failing that, you can always check the [`justfile`](justfile) for the commands it would normally run.
 
-## Run
-Ensure [`just`](https://github.com/casey/just) is installed. It's a useful shorthand package so I don't have to type long commands every time.
+### Available recipes
 
-```bash
-# List available recipes
-$ just -l
-
-# Main play command (`play` can be omitted)
-$ just play
-```
-
-Failing that, you can always check the [`justfile`](justfile) for the commands it would normally run.
+  * `just galaxy-pull`
+    * Installs Ansible Galaxy roles that might not be on your control node
+    * Run this once to pull role dependencies
+  * `just init-hosts`
+    * Bootstraps hosts, hardening security and installing required packages
+    * Only needs to be run once, usually
+  * `just media-deploy`
+    * Deploys (or re-deploys) Docker containers for the media server
+    * Run any time the container topology or a configuration changes

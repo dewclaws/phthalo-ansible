@@ -1,0 +1,27 @@
+---
+- name: "Prowlarr : create config dir"
+  ansible.builtin.file:
+    path: "{{ media_appdata_dir }}/prowlarr"
+    state: directory
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
+  register: prowlarr_config_dir
+
+- name: "Prowlarr : deploy container"
+  community.docker.docker_container:
+    name: prowlarr
+    image: lscr.io/linuxserver/prowlarr:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ media_docker_network }}"
+    env:
+      PUID: "{{ media_user.uid }}"
+      PGID: "{{ media_user.group }}"
+      TZ: "{{ media_timezone }}"
+    ports:
+      - 9696:9696
+    volumes:
+      - "{{ prowlarr_config_dir.path }}:/config"

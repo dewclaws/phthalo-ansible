@@ -1,0 +1,28 @@
+---
+- name: "Radarr : create config dir"
+  ansible.builtin.file:
+    path: "{{ media_appdata_dir }}/radarr"
+    state: directory
+    owner: "{{ media_user.name }}"
+    group: "{{ media_user.group }}"
+    mode: "0750"
+  register: radarr_config_dir
+
+- name: "Radarr : deploy container"
+  community.docker.docker_container:
+    name: radarr
+    image: lscr.io/linuxserver/radarr:latest
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ media_docker_network }}"
+    env:
+      PUID: "{{ media_user.uid }}"
+      PGID: "{{ media_user.group }}"
+      TZ: "{{ media_timezone }}"
+    ports:
+      - 7878:7878
+    volumes:
+      - "{{ radarr_config_dir.path }}:/config"
+      - "{{ media_root_mount }}:/data"

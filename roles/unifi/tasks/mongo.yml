@@ -1,0 +1,27 @@
+---
+- name: Copy mongodb init script
+  ansible.builtin.copy:
+    src: init-mongo.sh
+    dest: "{{ unifi_config_dir }}/init-mongo.sh"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+    mode: '0755'
+  register: copied_script
+
+- name: Deploy mongodb container
+  community.docker.docker_container:
+    name: unifi-db
+    image: mongo:7.0
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    network_mode: host
+    env:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters,digits,hexdigits') }}"
+      MONGO_USER: "{{ unifi_db_name }}"
+      MONGO_PASS: "{{ unifi_db_name }}"
+      MONGO_DBNAME: "{{ unifi_db_name }}"
+      MONGO_AUTHSOURCE: admin
+    volumes:
+      - "{{ copied_script['dest'] }}:/docker-entrypoint-initdb.d/init-mongo.sh:ro"

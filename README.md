@@ -41,6 +41,7 @@ There's also a role to set up my media server, Phthalo.
       sudo chown -R media:media /mnt/storage
       sudo chmod -R 770 /mnt/storage
       ```
+    5. Ensure the pool is mounted on boot.
 
 ## Running the playbook
 

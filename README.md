@@ -1,4 +1,4 @@
-# Azur's lab playbook
+# Lab playbook
 
 This is a really simple playbook to harden my server(s) and install necessary packages.
 There's also a role to set up my media server, Phthalo.
